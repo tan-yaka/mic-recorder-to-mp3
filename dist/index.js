@@ -15927,6 +15927,7 @@ var MicRecorder = function () {
 
       var AudioContext = window.AudioContext || window.webkitAudioContext;
       this.context = new AudioContext();
+      console.log('>>>>>>>>>>>>>> ' + this.context.sampleRate);
       this.config.sampleRate = this.context.sampleRate;
       this.rawChunksBuffer = encodeAfterRecord ? [] : null;
       this.lameEncoder = new Encoder(this.config);
