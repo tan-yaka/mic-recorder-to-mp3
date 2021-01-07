@@ -3,7 +3,7 @@ import { Mp3Encoder } from 'lamejs';
 class Encoder {
   constructor(config) {
     this.config = {
-      sampleRate: 44100,
+      sampleRate: 16000,
       bitRate: 128
     };
 
