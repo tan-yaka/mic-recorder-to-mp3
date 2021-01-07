@@ -15706,13 +15706,13 @@ var Encoder = function () {
     classCallCheck(this, Encoder);
 
     this.config = {
-      sampleRate: 16000,
+      sampleRate: 44100,
       bitRate: 128
     };
 
     Object.assign(this.config, config);
 
-    this.mp3Encoder = new Mp3Encoder_1(1, 16000, this.config.bitRate);
+    this.mp3Encoder = new Mp3Encoder_1(1, this.config.sampleRate, this.config.bitRate);
 
     // Audio is processed by frames of 1152 samples per audio channel
     // http://lame.sourceforge.net/tech-FAQ.txt
@@ -15927,7 +15927,6 @@ var MicRecorder = function () {
 
       var AudioContext = window.AudioContext || window.webkitAudioContext;
       this.context = new AudioContext();
-      console.log('>>>>>>>>>>>>>> ' + this.context.sampleRate);
       this.config.sampleRate = this.context.sampleRate;
       this.rawChunksBuffer = encodeAfterRecord ? [] : null;
       this.lameEncoder = new Encoder(this.config);
