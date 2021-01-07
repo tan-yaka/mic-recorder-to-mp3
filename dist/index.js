@@ -5928,7 +5928,7 @@ var ATH_1 = ATH;
 /*
  *  ReplayGainAnalysis - analyzes input samples and give the recommended dB change
  *  Copyright (C) 2001 David Robinson and Glen Sawyer
- *  Improvements and optimizations added by Frank Klemm, and by Marcel Muller 
+ *  Improvements and optimizations added by Frank Klemm, and by Marcel Muller
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -8075,7 +8075,7 @@ function QuantizePVT$1() {
      *
      * Robert Hegemann 2000-10-21
      */
-    
+
 
 }
 
@@ -14174,11 +14174,11 @@ var Quantize_1 = Quantize$1;
  * the reservoir, and checks to make sure main_data_begin was set properly by
  * the formatter<BR>
  * Background information:
- * 
+ *
  * This is the original text from the ISO standard. Because of sooo many bugs
  * and irritations correcting comments are added in brackets []. A '^W' means
  * you should remove the last word.
- * 
+ *
  * <PRE>
  *  1. The following rule can be used to calculate the maximum
  *     number of bits used for one granule [^W frame]:<BR>
@@ -14186,9 +14186,9 @@ var Quantize_1 = Quantize$1;
  *     per stereo signal [^W^W^W], 48 kHz) the frames must be of
  *     [^W^W^W are designed to have] constant length, i.e.
  *     one buffer [^W^W the frame] length is:<BR>
- * 
+ *
  *         320 kbps * 1152/48 kHz = 7680 bit = 960 byte
- * 
+ *
  *     This value is used as the maximum buffer per channel [^W^W] at
  *     lower bitrates [than 320 kbps]. At 64 kbps mono or 128 kbps
  *     stereo the main granule length is 64 kbps * 576/48 kHz = 768 bit
@@ -14238,22 +14238,22 @@ function Reservoir$1() {
 		 *          from the bit reservoir and at most 8*1440 bit from the current
 		 *          frame (320 kbps, 32 kHz), so 8*1951 bit is the largest possible
 		 *          value for MPEG-1 and -2)
-		 * 
+		 *
 		 *          maximum allowed granule/channel size times 4 = 8*2047 bits.,
 		 *          so this is the absolute maximum supported by the format.
-		 * 
-		 * 
+		 *
+		 *
 		 *      fullFrameBits:  maximum number of bits available for encoding
 		 *                      the current frame.
-		 * 
+		 *
 		 *      mean_bits:      target number of bits per granule.
-		 * 
+		 *
 		 *      frameLength:
-		 * 
+		 *
 		 *      gfc.ResvMax:   maximum allowed reservoir
-		 * 
+		 *
 		 *      gfc.ResvSize:  current reservoir size
-		 * 
+		 *
 		 *      l3_side.resvDrain_pre:
 		 *         ancillary data to be added to previous frame:
 		 *         (only usefull in VBR modes if it is possible to have
@@ -14262,10 +14262,10 @@ function Reservoir$1() {
 		 *         2010-02-13: RH now enabled, it seems to be needed for CBR too,
 		 *                     as there exists one example, where the FhG decoder
 		 *                     can't decode a -b320 CBR file anymore.
-		 * 
+		 *
 		 *      l3_side.resvDrain_post:
 		 *         ancillary data to be added to this frame:
-		 * 
+		 *
 		 * </PRE>
 		 */
 
@@ -14411,13 +14411,13 @@ function Reservoir$1() {
 		 * even possible to use Gabriel's lax buffer consideration again, which
 		 * assumes, any decoder should have a buffer large enough for a 320 kbps
 		 * frame at 32 kHz sample rate.
-		 * 
+		 *
 		 * old drain code: lame -b320 BlackBird.wav --. does not play with
 		 * GraphEdit.exe using FhG decoder V1.5 Build 50
-		 * 
+		 *
 		 * new drain code: lame -b320 BlackBird.wav --. plays fine with
 		 * GraphEdit.exe using FhG decoder V1.5 Build 50
-		 * 
+		 *
 		 * Robert Hegemann, 2010-02-13.
 		 */
 		/*
@@ -15706,7 +15706,7 @@ var Encoder = function () {
     classCallCheck(this, Encoder);
 
     this.config = {
-      sampleRate: 44100,
+      sampleRate: 16000,
       bitRate: 128
     };
 
@@ -15822,7 +15822,8 @@ var MicRecorder = function () {
       // the begining of the recording. It also helps to remove the mouse
       // "click" sound from the output mp3 file.
       startRecordingAt: 300,
-      deviceId: null
+      deviceId: null,
+      encodeAfterRecord: true,
     };
 
     this.activeStream = null;
@@ -15830,6 +15831,7 @@ var MicRecorder = function () {
     this.microphone = null;
     this.processor = null;
     this.startTime = 0;
+    this.rawChunksBuffer = null;
 
     Object.assign(this.config, config);
   }
@@ -15864,8 +15866,15 @@ var MicRecorder = function () {
           return;
         }
 
-        // Send microphone data to LAME for MP3 encoding while recording.
-        _this.lameEncoder.encode(event.inputBuffer.getChannelData(0));
+        var rawChunk = event.inputBuffer.getChannelData(0);
+
+        if (_this.config.encodeAfterRecord) {
+          // Save copy of raw chunk for future encoding
+          _this.rawChunksBuffer.push(Object.assign([], rawChunk));
+        } else {
+          // Send microphone data to LAME for MP3 encoding while recording.
+          _this.lameEncoder.encode(rawChunk);
+        }
       };
 
       // Begin retrieving microphone data.
@@ -15912,12 +15921,18 @@ var MicRecorder = function () {
     value: function start() {
       var _this2 = this;
 
+      var _config = this.config,
+        deviceId = _config.deviceId,
+        encodeAfterRecord = _config.encodeAfterRecord;
+
       var AudioContext = window.AudioContext || window.webkitAudioContext;
       this.context = new AudioContext();
       this.config.sampleRate = this.context.sampleRate;
+      this.rawChunksBuffer = encodeAfterRecord ? [] : null;
       this.lameEncoder = new Encoder(this.config);
+      this.i = 0;
 
-      var audio = this.config.deviceId ? { deviceId: { exact: this.config.deviceId } } : true;
+      var audio = deviceId ? { deviceId: { exact: deviceId } } : true;
 
       return new Promise(function (resolve, reject) {
         navigator.mediaDevices.getUserMedia({ audio: audio }).then(function (stream) {
@@ -15938,6 +15953,13 @@ var MicRecorder = function () {
      */
     value: function getMp3() {
       var _this3 = this;
+
+      if (this.config.encodeAfterRecord) {
+        this.rawChunksBuffer.forEach(function (rawChunk) {
+          _this3.lameEncoder.encode(rawChunk);
+        });
+        this.rawChunksBuffer = null;
+      }
 
       var finalBuffer = this.lameEncoder.finish();
 
